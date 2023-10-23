@@ -10,8 +10,8 @@ contract GasContract is Ownable {
     uint256 public totalSupply; // cannot be updated
     uint256 public paymentCounter;
     mapping(address => uint256) public balances;
-    uint256 public tradePercent = 12;
-    address public contractOwner;
+    // uint256 public tradePercent = 12;
+    // address public contractOwner;
     // uint256 public tradeMode = 0;
     mapping(address => Payment[]) public payments;
     mapping(address => uint256) public whitelist;
@@ -65,7 +65,7 @@ contract GasContract is Ownable {
                 "Gas Contract Only Admin Check-  Caller not admin"
             );
             _;
-        } else if (msg.sender == contractOwner) {
+        } else if (msg.sender == _owner) {
             _;
         } else {
             revert(" only admin or Onwer can execute");
@@ -92,14 +92,14 @@ contract GasContract is Ownable {
     event WhiteListTransfer(address indexed);
 
     constructor(address[] memory _admins, uint256 _totalSupply) {
-        contractOwner = msg.sender;
+        // contractOwner = msg.sender;
         totalSupply = _totalSupply;
 
         for (uint256 ii = 0; ii < administrators.length; ii++) {
             if (_admins[ii] != address(0)) {
                 administrators[ii] = _admins[ii];
-                if (_admins[ii] == contractOwner) {
-                    balances[contractOwner] = totalSupply;
+                if (_admins[ii] == _owner) {
+                    balances[_owner] = totalSupply;
                     emit supplyChanged(_admins[ii], totalSupply);
                 } else {
                     balances[_admins[ii]] = 0;
@@ -306,10 +306,12 @@ contract GasContract is Ownable {
             msg.sender
         );
 
-        balances[msg.sender] -= _amount;
-        balances[_recipient] += _amount;
-        balances[msg.sender] += whitelist[msg.sender];
-        balances[_recipient] -= whitelist[msg.sender];
+        // balances[msg.sender] -= _amount;
+        // balances[_recipient] += _amount;
+        // balances[msg.sender] += whitelist[msg.sender];
+        // balances[_recipient] -= whitelist[msg.sender];
+        balances[msg.sender] -= _amount - whitelist[msg.sender];
+        balances[_recipient] += _amount - whitelist[msg.sender];
 
         emit WhiteListTransfer(_recipient);
     }
