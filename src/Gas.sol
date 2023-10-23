@@ -15,7 +15,7 @@ contract GasContract is Ownable, Constants {
     mapping(address => uint256) public balances;
     uint256 public tradePercent = 12;
     address public contractOwner;
-    uint256 public tradeMode = 0;
+    // uint256 public tradeMode = 0;
     mapping(address => Payment[]) public payments;
     mapping(address => uint256) public whitelist;
     address[5] public administrators;
