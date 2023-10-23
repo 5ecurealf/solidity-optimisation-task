@@ -157,21 +157,21 @@ contract GasContract is Ownable, Constants {
     //     return mode;
     // }
 
-    function addHistory(
-        address _updateAddress,
-        bool _tradeMode
-    ) public returns (bool status_, bool tradeMode_) {
-        History memory history;
-        history.blockNumber = block.number;
-        history.lastUpdate = block.timestamp;
-        history.updatedBy = _updateAddress;
-        paymentHistory.push(history);
-        bool[] memory status = new bool[](tradePercent);
-        for (uint256 i = 0; i < tradePercent; i++) {
-            status[i] = true;
-        }
-        return ((status[0] == true), _tradeMode);
-    }
+    // function addHistory(
+    //     address _updateAddress,
+    //     bool _tradeMode
+    // ) public returns (bool status_, bool tradeMode_) {
+    //     History memory history;
+    //     history.blockNumber = block.number;
+    //     history.lastUpdate = block.timestamp;
+    //     history.updatedBy = _updateAddress;
+    //     paymentHistory.push(history);
+    //     bool[] memory status = new bool[](tradePercent);
+    //     for (uint256 i = 0; i < tradePercent; i++) {
+    //         status[i] = true;
+    //     }
+    //     return ((status[0] == true), _tradeMode);
+    // }
 
     function getPayments(
         address _user
@@ -240,7 +240,20 @@ contract GasContract is Ownable, Constants {
 
         // bool tradingMode = getTradingMode();
         bool tradingMode = (tradeFlag == 1 || dividendFlag == 1);
-        addHistory(_user, tradingMode);
+        // addHistory(_user, tradingMode);
+        // History memory history;
+        // history.blockNumber = block.number;
+        // history.lastUpdate = block.timestamp;
+        // history.updatedBy = _user;
+
+        paymentHistory.push(
+            History({
+                blockNumber: block.number,
+                lastUpdate: block.timestamp,
+                updatedBy: _user
+            })
+        );
+
         emit PaymentUpdated(
             senderOfTx,
             _ID,
