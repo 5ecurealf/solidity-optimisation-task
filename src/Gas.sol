@@ -31,7 +31,6 @@ contract GasContract is Ownable {
         PaymentType paymentType;
         uint256 paymentID;
         bool adminUpdated;
-        string recipientName; // max 8 characters
         address recipient;
         address admin; // administrators address
         uint256 amount;
@@ -80,12 +79,7 @@ contract GasContract is Ownable {
 
     event supplyChanged(address indexed, uint256 indexed);
     event Transfer(address recipient, uint256 amount);
-    event PaymentUpdated(
-        address admin,
-        uint256 ID,
-        uint256 amount,
-        string recipient
-    );
+    event PaymentUpdated(address admin, uint256 ID, uint256 amount);
     event WhiteListTransfer(address indexed);
 
     constructor(address[] memory _admins, uint256 _totalSupply) {
@@ -170,19 +164,15 @@ contract GasContract is Ownable {
         uint256 _amount,
         string calldata _name
     ) public {
-        require(
-            bytes(_name).length < 9,
-            "recipient name too long, max length 8 characters"
-        );
         _transferFunds(msg.sender, _recipient, _amount);
 
         emit Transfer(_recipient, _amount);
+
         payments[msg.sender].push(
             Payment({
                 paymentType: PaymentType.BasicPayment,
                 recipient: _recipient,
                 amount: _amount,
-                recipientName: _name,
                 paymentID: ++paymentCounter,
                 adminUpdated: false, // Assuming default values for these fields.
                 admin: address(0) // You can adjust based on your contract's logic.
@@ -235,12 +225,7 @@ contract GasContract is Ownable {
             })
         );
 
-        emit PaymentUpdated(
-            senderOfTx,
-            _ID,
-            _amount,
-            paymentToUpdate.recipientName
-        );
+        emit PaymentUpdated(senderOfTx, _ID, _amount);
         // for (uint256 ii = 0; ii < payments[_user].length; ii++) {
         //     if (payments[_user][ii].paymentID == _ID) {
         //         payments[_user][ii].adminUpdated = true;
