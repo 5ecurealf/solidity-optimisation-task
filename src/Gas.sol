@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.0;
+pragma solidity ^0.8.0;
 
-import "./Ownable.sol";
-
-contract GasContract is Ownable {
+contract GasContract {
     // Try to group the variables by size to take advantage of storage slots.
     // Starting with smaller types first, then move to larger types.
 
     // Grouping 256-bit types together
-    uint256 private totalSupply; // cannot be updated
+    uint256 private immutable totalSupply; // cannot be updated
     uint256 private paymentCounter;
+    address private immutable _owner;
 
     // History[] public paymentHistory; // when a payment was updated
     address[5] public administrators;
@@ -20,25 +19,13 @@ contract GasContract is Ownable {
     mapping(address => ImportantStruct) public whiteListStruct;
     mapping(address => Payment[]) private payments;
 
-    // Enums and Structs (their order doesn't affect slot efficiency but is kept for clarity)
-    enum PaymentType {
-        BasicPayment
-    }
-
     struct Payment {
         uint256 paymentID;
         address recipient;
         address admin; // administrators address
         uint256 amount;
         bool adminUpdated;
-        PaymentType paymentType;
     }
-
-    // struct History {
-    //     uint256 lastUpdate;
-    //     address updatedBy;
-    //     uint256 blockNumber;
-    // }
 
     struct ImportantStruct {
         uint256 amount;
@@ -54,8 +41,8 @@ contract GasContract is Ownable {
     }
 
     event AddedToWhitelist(address userAddress, uint256 tier);
-    event supplyChanged(address indexed, uint256 indexed);
-    event Transfer(address recipient, uint256 amount);
+    // event supplyChanged(address indexed, uint256 indexed);
+    // event Transfer(address recipient, uint256 amount);
     // event PaymentUpdated(address admin, uint256 ID, uint256 amount);
     event WhiteListTransfer(address indexed);
 
@@ -63,7 +50,7 @@ contract GasContract is Ownable {
         address _userAddrs,
         uint256 _tier
     ) public onlyAdminOrOwner {
-        require(_tier < 255, "Tier must be less than 255.");
+        require(_tier < 255);
 
         if (_tier > 3) {
             whitelist[_userAddrs] = 3;
@@ -79,13 +66,16 @@ contract GasContract is Ownable {
     constructor(address[] memory _admins, uint256 _totalSupply) {
         require(_admins.length > 0, "admins array empty");
         totalSupply = _totalSupply;
-        balances[msg.sender] = totalSupply;
-        emit supplyChanged(msg.sender, totalSupply);
+        _owner = msg.sender;
+        balances[msg.sender] = _totalSupply;
+        // emit supplyChanged(msg.sender, _totalSupply);
 
-        for (uint256 ii = 0; ii < administrators.length; ii++) {
+        for (uint128 ii = 0; ii < administrators.length; ii++) {
             administrators[ii] = _admins[ii];
         }
     }
+
+    // function administrators(uint128 idx) {}
 
     // function getPaymentHistory() external view returns (History[] memory) {
     //     return paymentHistory;
@@ -116,11 +106,10 @@ contract GasContract is Ownable {
     ) public {
         _transferFunds(msg.sender, _recipient, _amount);
 
-        emit Transfer(_recipient, _amount);
+        // emit Transfer(_recipient, _amount);
 
         payments[msg.sender].push(
             Payment({
-                paymentType: PaymentType.BasicPayment,
                 recipient: _recipient,
                 amount: _amount,
                 paymentID: ++paymentCounter,
@@ -134,10 +123,7 @@ contract GasContract is Ownable {
         // address senderOfTx = ;
 
         uint256 usersTier = whitelist[msg.sender];
-        require(
-            (usersTier > 0 && usersTier < 4),
-            "Invalid tier; only 1, 2, 3 allowed."
-        );
+        require((usersTier > 0 && usersTier < 4), "tier only 1, 2, 3 allowed.");
 
         require(_amount > 3, "need to send amount > 3");
 
@@ -157,17 +143,13 @@ contract GasContract is Ownable {
         );
     }
 
-    fallback() external payable {
-        payable(msg.sender).transfer(msg.value);
-    }
-
     // Internal function to handle balance updates.
     function _transferFunds(
         address _sender,
         address _recipient,
         uint256 _amount
     ) internal {
-        require(balances[_sender] >= _amount, "Sender insufficient Balance");
+        require(balances[_sender] >= _amount, "insufficient Balance");
         balances[_sender] -= _amount;
         balances[_recipient] += _amount;
     }
