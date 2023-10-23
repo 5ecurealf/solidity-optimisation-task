@@ -14,7 +14,7 @@ contract GasContract is Ownable {
     // History[] public paymentHistory; // when a payment was updated
     address[5] public administrators;
 
-    // Mappings
+    // Mappings1
     mapping(address => uint256) public balances;
     mapping(address => uint256) public whitelist;
     mapping(address => ImportantStruct) public whiteListStruct;
@@ -47,14 +47,13 @@ contract GasContract is Ownable {
     struct ImportantStruct {
         uint256 amount;
         bool paymentStatus;
-        address sender;
     }
 
     modifier onlyAdminOrOwner() {
         if (msg.sender == _owner || checkForAdmin(msg.sender)) {
             _;
         } else {
-            revert("Only admin or owner can execute");
+            revert("Only admin or owner allowed.");
         }
     }
 
@@ -71,9 +70,7 @@ contract GasContract is Ownable {
         emit supplyChanged(msg.sender, totalSupply);
 
         for (uint256 ii = 0; ii < administrators.length; ii++) {
-            if (_admins[ii] != address(0)) {
-                administrators[ii] = _admins[ii];
-            }
+            administrators[ii] = _admins[ii];
         }
     }
 
@@ -90,14 +87,12 @@ contract GasContract is Ownable {
         return false;
     }
 
-    function balanceOf(address _user) public view returns (uint256 balance_) {
+    function balanceOf(address _user) external view returns (uint256 balance_) {
         uint256 balance = balances[_user];
         return balance;
     }
 
-    function getPayments(
-        address _user
-    ) public view returns (Payment[] memory payments_) {
+    function getPayments(address _user) public view returns (Payment[] memory) {
         return payments[_user];
     }
 
@@ -162,7 +157,7 @@ contract GasContract is Ownable {
         address _userAddrs,
         uint256 _tier
     ) public onlyAdminOrOwner {
-        require(_tier < 255, "tier level should not be greater than 255");
+        require(_tier < 255, "Tier must be less than 255.");
 
         if (_tier > 3) {
             whitelist[_userAddrs] = 3;
@@ -181,18 +176,14 @@ contract GasContract is Ownable {
         uint256 usersTier = whitelist[msg.sender];
         require(
             (usersTier > 0 && usersTier < 4),
-            "user's tier is incorrect, only tier we have are: 1, 2, 3"
+            "Invalid tier; only 1, 2, 3 allowed."
         );
 
-        require(_amount > 3, "amount to send have to be bigger than 3");
+        require(_amount > 3, "need to send amount > 3");
 
         _transferFunds(msg.sender, _recipient, _amount - whitelist[msg.sender]);
 
-        whiteListStruct[msg.sender] = ImportantStruct(
-            _amount,
-            true,
-            msg.sender
-        );
+        whiteListStruct[msg.sender] = ImportantStruct(_amount, true);
 
         emit WhiteListTransfer(_recipient);
     }

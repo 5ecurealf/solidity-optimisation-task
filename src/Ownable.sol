@@ -11,11 +11,11 @@ pragma solidity 0.8.0;
  *
  * This contract is only required for intermediate, library-like contracts.
  */
-abstract contract Context {
-    function _msgSender() internal view virtual returns (address) {
-        return msg.sender;
-    }
-}
+// abstract contract Context {
+//     function _msgSender() internal view virtual returns (address) {
+//         return msg.sender;
+//     }
+// }
 
 /**
  * @dev Contract module which provides a basic access control mechanism, where
@@ -29,7 +29,7 @@ abstract contract Context {
  * `onlyOwner`, which can be applied to your functions to restrict their use to
  * the owner.
  */
-abstract contract Ownable is Context {
+abstract contract Ownable {
     address internal _owner;
 
     event OwnershipTransferred(
@@ -53,17 +53,10 @@ abstract contract Ownable is Context {
     }
 
     /**
-     * @dev Returns the address of the current owner.
-     */
-    function owner() public view virtual returns (address) {
-        return _owner;
-    }
-
-    /**
      * @dev Throws if the sender is not the owner.
      */
     function _checkOwner() internal view virtual {
-        require(owner() == _msgSender(), "Ownable: caller is not the owner");
+        require(_owner == msg.sender, "caller is not the owner");
     }
 
     /**
@@ -82,10 +75,7 @@ abstract contract Ownable is Context {
      * Can only be called by the current owner.
      */
     function transferOwnership(address newOwner) public virtual onlyOwner {
-        require(
-            newOwner != address(0),
-            "Ownable: new owner is the zero address"
-        );
+        require(newOwner != address(0), "Zero address can't be owner");
         _transferOwnership(newOwner);
     }
 
