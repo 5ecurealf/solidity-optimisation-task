@@ -4,19 +4,23 @@ pragma solidity 0.8.0;
 import "./Ownable.sol";
 
 contract GasContract is Ownable {
-    // bool public constant tradeFlag = true;
-    // bool public constant dividendFlag = true;
+    // Try to group the variables by size to take advantage of storage slots.
+    // Starting with smaller types first, then move to larger types.
 
-    uint256 public totalSupply; // cannot be updated
-    uint256 public paymentCounter;
-    mapping(address => uint256) public balances;
-    // uint256 public tradePercent = 12;
-    // address public contractOwner;
-    // uint256 public tradeMode = 0;
-    mapping(address => Payment[]) public payments;
-    mapping(address => uint256) public whitelist;
+    // Grouping 256-bit types together
+    uint256 private totalSupply; // cannot be updated
+    uint256 private paymentCounter;
+
+    // History[] public paymentHistory; // when a payment was updated
     address[5] public administrators;
 
+    // Mappings
+    mapping(address => uint256) public balances;
+    mapping(address => uint256) public whitelist;
+    mapping(address => ImportantStruct) public whiteListStruct;
+    mapping(address => Payment[]) private payments;
+
+    // Enums and Structs (their order doesn't affect slot efficiency but is kept for clarity)
     enum PaymentType {
         Unknown,
         BasicPayment,
@@ -25,81 +29,57 @@ contract GasContract is Ownable {
         GroupPayment
     }
 
-    History[] public paymentHistory; // when a payment was updated
-
     struct Payment {
-        PaymentType paymentType;
         uint256 paymentID;
-        bool adminUpdated;
         address recipient;
         address admin; // administrators address
         uint256 amount;
+        bool adminUpdated;
+        PaymentType paymentType;
     }
 
-    struct History {
-        uint256 lastUpdate;
-        address updatedBy;
-        uint256 blockNumber;
-    }
-    bool wasLastOdd = true;
-    mapping(address => bool) public isOddWhitelistUser;
+    // struct History {
+    //     uint256 lastUpdate;
+    //     address updatedBy;
+    //     uint256 blockNumber;
+    // }
 
     struct ImportantStruct {
         uint256 amount;
         bool paymentStatus;
         address sender;
     }
-    mapping(address => ImportantStruct) public whiteListStruct;
-
-    event AddedToWhitelist(address userAddress, uint256 tier);
 
     modifier onlyAdminOrOwner() {
-        if (checkForAdmin(msg.sender) || msg.sender == _owner) {
+        if (msg.sender == _owner || checkForAdmin(msg.sender)) {
             _;
         } else {
             revert("Only admin or owner can execute");
         }
     }
 
-    // modifier checkIfWhiteListed(address sender) {
-    //     uint256 usersTier = whitelist[sender];
-    //     require(
-    //         (usersTier > 0 && usersTier < 4),
-    //         "user's tier is incorrect, it cannot be over 4 as the only tier we have are: 1, 2, 3"
-    //     );
-    //     _;
-    // }
-
+    event AddedToWhitelist(address userAddress, uint256 tier);
     event supplyChanged(address indexed, uint256 indexed);
     event Transfer(address recipient, uint256 amount);
-    event PaymentUpdated(address admin, uint256 ID, uint256 amount);
+    // event PaymentUpdated(address admin, uint256 ID, uint256 amount);
     event WhiteListTransfer(address indexed);
 
     constructor(address[] memory _admins, uint256 _totalSupply) {
-        // contractOwner = msg.sender;
+        require(_admins.length > 0, "admins array empty");
         totalSupply = _totalSupply;
+        balances[msg.sender] = totalSupply;
+        emit supplyChanged(msg.sender, totalSupply);
 
         for (uint256 ii = 0; ii < administrators.length; ii++) {
             if (_admins[ii] != address(0)) {
                 administrators[ii] = _admins[ii];
-                if (_admins[ii] == _owner) {
-                    balances[_owner] = totalSupply;
-                    emit supplyChanged(_admins[ii], totalSupply);
-                } else {
-                    balances[_admins[ii]] = 0;
-                    emit supplyChanged(_admins[ii], 0);
-                }
             }
         }
     }
 
-    function getPaymentHistory()
-        public
-        payable
-        returns (History[] memory paymentHistory_)
-    {
-        return paymentHistory;
-    }
+    // function getPaymentHistory() external view returns (History[] memory) {
+    //     return paymentHistory;
+    // }
 
     function checkForAdmin(address _user) public view returns (bool) {
         for (uint256 ii = 0; ii < administrators.length; ii++) {
@@ -115,39 +95,9 @@ contract GasContract is Ownable {
         return balance;
     }
 
-    // function getTradingMode() public view returns (bool mode_) {
-    //     bool mode = false;
-    //     if (tradeFlag == 1 || dividendFlag == 1) {
-    //         mode = true;
-    //     } else {
-    //         mode = false;
-    //     }
-    //     return mode;
-    // }
-
-    // function addHistory(
-    //     address _updateAddress,
-    //     bool _tradeMode
-    // ) public returns (bool status_, bool tradeMode_) {
-    //     History memory history;
-    //     history.blockNumber = block.number;
-    //     history.lastUpdate = block.timestamp;
-    //     history.updatedBy = _updateAddress;
-    //     paymentHistory.push(history);
-    //     bool[] memory status = new bool[](tradePercent);
-    //     for (uint256 i = 0; i < tradePercent; i++) {
-    //         status[i] = true;
-    //     }
-    //     return ((status[0] == true), _tradeMode);
-    // }
-
     function getPayments(
         address _user
     ) public view returns (Payment[] memory payments_) {
-        require(
-            _user != address(0),
-            "Gas Contract - getPayments function - User must have a valid non zero address"
-        );
         return payments[_user];
     }
 
@@ -172,69 +122,41 @@ contract GasContract is Ownable {
         );
     }
 
-    function updatePayment(
-        address _user,
-        uint256 _ID,
-        uint256 _amount,
-        PaymentType _type
-    ) public onlyAdminOrOwner {
-        require(
-            (_ID > 0 && _ID <= payments[_user].length),
-            "ID must be greater than 0 and must exist"
-        );
-        require(_amount > 0, "Amount must be greater than 0");
-        require(
-            _user != address(0),
-            "Admin must have a valid non zero address"
-        );
+    // function updatePayment(
+    //     address _user,
+    //     uint256 _ID,
+    //     uint256 _amount,
+    //     PaymentType _type
+    // ) public onlyAdminOrOwner {
+    //     require(
+    //         (_ID > 0 && _ID <= payments[_user].length),
+    //         "ID must be greater than 0 and must exist"
+    //     );
+    //     require(_amount > 0, "Amount must be greater than 0");
+    //     require(
+    //         _user != address(0),
+    //         "Admin must have a valid non zero address"
+    //     );
 
-        address senderOfTx = msg.sender;
-        uint256 id = _ID - 1;
+    //     address senderOfTx = msg.sender;
+    //     uint256 id = _ID - 1;
 
-        Payment storage paymentToUpdate = payments[_user][id];
-        paymentToUpdate.adminUpdated = true;
-        paymentToUpdate.admin = _user;
-        paymentToUpdate.paymentType = _type;
-        paymentToUpdate.amount = _amount;
-        // payments[_user][id].adminUpdated = true;
-        // payments[_user][id].admin = _user;
-        // payments[_user][id].paymentType = _type;
-        // payments[_user][id].amount = _amount;
+    //     Payment storage paymentToUpdate = payments[_user][id];
+    //     paymentToUpdate.adminUpdated = true;
+    //     paymentToUpdate.admin = _user;
+    //     paymentToUpdate.paymentType = _type;
+    //     paymentToUpdate.amount = _amount;
 
-        // bool tradingMode = getTradingMode();
-        // bool tradingMode = (tradeFlag || dividendFlag);
-        // addHistory(_user, tradingMode);
-        // History memory history;
-        // history.blockNumber = block.number;
-        // history.lastUpdate = block.timestamp;
-        // history.updatedBy = _user;
+    //     paymentHistory.push(
+    //         History({
+    //             blockNumber: block.number,
+    //             lastUpdate: block.timestamp,
+    //             updatedBy: _user
+    //         })
+    //     );
 
-        paymentHistory.push(
-            History({
-                blockNumber: block.number,
-                lastUpdate: block.timestamp,
-                updatedBy: _user
-            })
-        );
-
-        emit PaymentUpdated(senderOfTx, _ID, _amount);
-        // for (uint256 ii = 0; ii < payments[_user].length; ii++) {
-        //     if (payments[_user][ii].paymentID == _ID) {
-        //         payments[_user][ii].adminUpdated = true;
-        //         payments[_user][ii].admin = _user;
-        //         payments[_user][ii].paymentType = _type;
-        //         payments[_user][ii].amount = _amount;
-        //         bool tradingMode = getTradingMode();
-        //         addHistory(_user, tradingMode);
-        //         emit PaymentUpdated(
-        //             senderOfTx,
-        //             _ID,
-        //             _amount,
-        //             payments[_user][ii].recipientName
-        //         );
-        //     }
-        // }
-    }
+    //     emit PaymentUpdated(senderOfTx, _ID, _amount);
+    // }
 
     function addToWhitelist(
         address _userAddrs,
@@ -250,8 +172,6 @@ contract GasContract is Ownable {
             whitelist[_userAddrs] = 1;
         }
 
-        wasLastOdd = !wasLastOdd;
-        isOddWhitelistUser[_userAddrs] = wasLastOdd;
         emit AddedToWhitelist(_userAddrs, _tier);
     }
 
@@ -261,7 +181,7 @@ contract GasContract is Ownable {
         uint256 usersTier = whitelist[msg.sender];
         require(
             (usersTier > 0 && usersTier < 4),
-            "user's tier is incorrect, it cannot be over 4 as the only tier we have are: 1, 2, 3"
+            "user's tier is incorrect, only tier we have are: 1, 2, 3"
         );
 
         require(_amount > 3, "amount to send have to be bigger than 3");
@@ -273,13 +193,6 @@ contract GasContract is Ownable {
             true,
             msg.sender
         );
-
-        // balances[msg.sender] -= _amount;
-        // balances[_recipient] += _amount;
-        // balances[msg.sender] += whitelist[msg.sender];
-        // balances[_recipient] -= whitelist[msg.sender];
-        // balances[msg.sender] -= _amount - whitelist[msg.sender];
-        // balances[_recipient] += _amount - whitelist[msg.sender];
 
         emit WhiteListTransfer(_recipient);
     }
