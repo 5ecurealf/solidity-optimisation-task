@@ -130,42 +130,6 @@ contract GasContract is Ownable {
         );
     }
 
-    // function updatePayment(
-    //     address _user,
-    //     uint256 _ID,
-    //     uint256 _amount,
-    //     PaymentType _type
-    // ) public onlyAdminOrOwner {
-    //     require(
-    //         (_ID > 0 && _ID <= payments[_user].length),
-    //         "ID must be greater than 0 and must exist"
-    //     );
-    //     require(_amount > 0, "Amount must be greater than 0");
-    //     require(
-    //         _user != address(0),
-    //         "Admin must have a valid non zero address"
-    //     );
-
-    //     address senderOfTx = msg.sender;
-    //     uint256 id = _ID - 1;
-
-    //     Payment storage paymentToUpdate = payments[_user][id];
-    //     paymentToUpdate.adminUpdated = true;
-    //     paymentToUpdate.admin = _user;
-    //     paymentToUpdate.paymentType = _type;
-    //     paymentToUpdate.amount = _amount;
-
-    //     paymentHistory.push(
-    //         History({
-    //             blockNumber: block.number,
-    //             lastUpdate: block.timestamp,
-    //             updatedBy: _user
-    //         })
-    //     );
-
-    //     emit PaymentUpdated(senderOfTx, _ID, _amount);
-    // }
-
     function whiteTransfer(address _recipient, uint256 _amount) public {
         // address senderOfTx = ;
 
