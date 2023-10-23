@@ -22,11 +22,7 @@ contract GasContract is Ownable {
 
     // Enums and Structs (their order doesn't affect slot efficiency but is kept for clarity)
     enum PaymentType {
-        Unknown,
-        BasicPayment,
-        Refund,
-        Dividend,
-        GroupPayment
+        BasicPayment
     }
 
     struct Payment {
@@ -62,6 +58,23 @@ contract GasContract is Ownable {
     event Transfer(address recipient, uint256 amount);
     // event PaymentUpdated(address admin, uint256 ID, uint256 amount);
     event WhiteListTransfer(address indexed);
+
+    function addToWhitelist(
+        address _userAddrs,
+        uint256 _tier
+    ) public onlyAdminOrOwner {
+        require(_tier < 255, "Tier must be less than 255.");
+
+        if (_tier > 3) {
+            whitelist[_userAddrs] = 3;
+        } else if (_tier > 1) {
+            whitelist[_userAddrs] = 2;
+        } else {
+            whitelist[_userAddrs] = 1;
+        }
+
+        emit AddedToWhitelist(_userAddrs, _tier);
+    }
 
     constructor(address[] memory _admins, uint256 _totalSupply) {
         require(_admins.length > 0, "admins array empty");
@@ -152,23 +165,6 @@ contract GasContract is Ownable {
 
     //     emit PaymentUpdated(senderOfTx, _ID, _amount);
     // }
-
-    function addToWhitelist(
-        address _userAddrs,
-        uint256 _tier
-    ) public onlyAdminOrOwner {
-        require(_tier < 255, "Tier must be less than 255.");
-
-        if (_tier > 3) {
-            whitelist[_userAddrs] = 3;
-        } else if (_tier > 1) {
-            whitelist[_userAddrs] = 2;
-        } else {
-            whitelist[_userAddrs] = 1;
-        }
-
-        emit AddedToWhitelist(_userAddrs, _tier);
-    }
 
     function whiteTransfer(address _recipient, uint256 _amount) public {
         // address senderOfTx = ;
