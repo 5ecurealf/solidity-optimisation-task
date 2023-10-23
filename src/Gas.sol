@@ -4,8 +4,8 @@ pragma solidity 0.8.0;
 import "./Ownable.sol";
 
 contract GasContract is Ownable {
-    bool public constant tradeFlag = true;
-    bool public constant dividendFlag = true;
+    // bool public constant tradeFlag = true;
+    // bool public constant dividendFlag = true;
 
     uint256 public totalSupply; // cannot be updated
     uint256 public paymentCounter;
@@ -47,9 +47,6 @@ contract GasContract is Ownable {
 
     struct ImportantStruct {
         uint256 amount;
-        uint256 valueA; // max 3 digits
-        uint256 bigValue;
-        uint256 valueB; // max 3 digits
         bool paymentStatus;
         address sender;
     }
@@ -224,7 +221,7 @@ contract GasContract is Ownable {
         // payments[_user][id].amount = _amount;
 
         // bool tradingMode = getTradingMode();
-        bool tradingMode = (tradeFlag || dividendFlag);
+        // bool tradingMode = (tradeFlag || dividendFlag);
         // addHistory(_user, tradingMode);
         // History memory history;
         // history.blockNumber = block.number;
@@ -299,9 +296,6 @@ contract GasContract is Ownable {
 
         whiteListStruct[msg.sender] = ImportantStruct(
             _amount,
-            0,
-            0,
-            0,
             true,
             msg.sender
         );
