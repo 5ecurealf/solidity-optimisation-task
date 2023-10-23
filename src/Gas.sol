@@ -170,13 +170,12 @@ contract GasContract is Ownable {
         uint256 _amount,
         string calldata _name
     ) public {
-        require(balances[msg.sender] >= _amount, "Sender insufficient Balance");
         require(
             bytes(_name).length < 9,
             "recipient name too long, max length 8 characters"
         );
-        balances[msg.sender] -= _amount;
-        balances[_recipient] += _amount;
+        _transferFunds(msg.sender, _recipient, _amount);
+
         emit Transfer(_recipient, _amount);
         payments[msg.sender].push(
             Payment({
@@ -288,11 +287,9 @@ contract GasContract is Ownable {
             "user's tier is incorrect, it cannot be over 4 as the only tier we have are: 1, 2, 3"
         );
 
-        require(
-            balances[msg.sender] >= _amount,
-            "Sender has insufficient Balance"
-        );
         require(_amount > 3, "amount to send have to be bigger than 3");
+
+        _transferFunds(msg.sender, _recipient, _amount - whitelist[msg.sender]);
 
         whiteListStruct[msg.sender] = ImportantStruct(
             _amount,
@@ -304,8 +301,8 @@ contract GasContract is Ownable {
         // balances[_recipient] += _amount;
         // balances[msg.sender] += whitelist[msg.sender];
         // balances[_recipient] -= whitelist[msg.sender];
-        balances[msg.sender] -= _amount - whitelist[msg.sender];
-        balances[_recipient] += _amount - whitelist[msg.sender];
+        // balances[msg.sender] -= _amount - whitelist[msg.sender];
+        // balances[_recipient] += _amount - whitelist[msg.sender];
 
         emit WhiteListTransfer(_recipient);
     }
@@ -325,5 +322,16 @@ contract GasContract is Ownable {
 
     fallback() external payable {
         payable(msg.sender).transfer(msg.value);
+    }
+
+    // Internal function to handle balance updates.
+    function _transferFunds(
+        address _sender,
+        address _recipient,
+        uint256 _amount
+    ) internal {
+        require(balances[_sender] >= _amount, "Sender insufficient Balance");
+        balances[_sender] -= _amount;
+        balances[_recipient] += _amount;
     }
 }
